@@ -16,8 +16,13 @@ add_action( 'admin_menu', function() {
 
         if(isset($_POST['action']) && $_POST['action'] === 'run_all') {
             try {
-                echo '<div style="padding:10px; background: #9ece7f; border: 1px solid #888; margin-bottom: 20px;"><b>Running All Indexers</b>... ✓</div>' . PHP_EOL;
-                RunIndexers::run();
+                echo '<div style="padding:10px; background: #9ece7f; border: 1px solid #888; margin-bottom: 20px;"><b>Running All Indexers</b>' . PHP_EOL;
+                    RunIndexers::run();
+                    foreach(RunIndexers::getIndexers() as $indexer) {
+                        $indexerName = $indexer::DISPLAY_NAME;
+                        echo "<div>Running $indexerName indexer... ✓</div>";
+                    }
+                echo '</div>';
 
             } catch(\Exception $exception) {
                 echo $exception->getMessage();
@@ -39,6 +44,8 @@ add_action( 'admin_menu', function() {
                 }
 
                 $indexer = new $indexerName();
+                $indexer::index();
+
                 echo '<div style="padding:10px; background: #9ece7f; border: 1px solid #888; margin-bottom: 20px;">Running the <b>' . $indexer::DISPLAY_NAME . '</b> indexer... ✓</div>';
 
             } catch(\Exception $exception) {
