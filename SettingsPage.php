@@ -1,6 +1,6 @@
 <?php
 
-use PixelKey\Algolia\Commands\RunIndexers;
+use \PixelKey\Algolia\Commands\RunIndexers;
 
 add_action( 'admin_menu', function() {
     add_options_page( 'Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', function() {
