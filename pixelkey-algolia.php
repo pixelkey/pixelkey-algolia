@@ -14,15 +14,10 @@
  */
 namespace PixelKey\Algolia;
 
-use PixelKey\Algolia\Commands\CommandInterface;
-use PixelKey\Algolia\Commands\RunIndexers;
-
 include 'PixelKeyAutoloader.php';
+include 'Setup.php';
 include 'SettingsPage.php';
 
-$commands = [
-    Commands\RunIndexers::class
-];
-
+Setup::init();
 
 

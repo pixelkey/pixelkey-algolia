@@ -3,11 +3,14 @@
 namespace PixelKey\Algolia\Commands;
 
 use PixelKey\Algolia\Indexers\IndexerAbstract;
+use PixelKey\Algolia\Setup;
 
 class RunIndexers implements CommandInterface {
     public const INDEXERS = [];
 
     public static function run($indexers = false) {
+        if(!is_plugin_active(Setup::PLUGIN_NAME)) return;
+
         if(!$indexers) {
             $indexers = self::getIndexers();
         }

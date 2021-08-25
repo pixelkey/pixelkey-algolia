@@ -12,7 +12,7 @@ function pixelkey_autoloader($classname) {
         return false;
     }
 
-    $location = str_replace('PixelKey/', '', $location);
+    $location = str_replace('PixelKey' . DIRECTORY_SEPARATOR , '', $location);
 
     if(file_exists($location)){
         return include $location;
