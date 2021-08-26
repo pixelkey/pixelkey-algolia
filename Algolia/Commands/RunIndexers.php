@@ -3,14 +3,9 @@
 namespace PixelKey\Algolia\Commands;
 
 use PixelKey\Algolia\Indexers\IndexerAbstract;
-use PixelKey\Algolia\Setup;
 
 class RunIndexers implements CommandInterface {
-    public const INDEXERS = [];
-
     public static function run($indexers = false) {
-        if(!is_plugin_active(Setup::PLUGIN_NAME)) return;
-
         if(!$indexers) {
             $indexers = self::getIndexers();
         }
@@ -25,17 +20,20 @@ class RunIndexers implements CommandInterface {
 
             if(!$instance instanceof IndexerAbstract) return;
 
-            $instance::index();
+            $instance->index();
         }
     }
 
     public static function getIndexers() {
-        $indexers = self::INDEXERS;
         $collectIndexers = [];
         $collectIndexers = apply_filters( 'pixelkey_algolia_add_custom_indexer', $collectIndexers);
 
-        $indexers = array_merge($indexers, $collectIndexers);
-
-        return $indexers;
+        return array_filter($collectIndexers, function($indexer) {
+            if($indexer instanceof IndexerAbstract) {
+                return true;
+            } else {
+                return false;
+            }
+        });
     }
 }

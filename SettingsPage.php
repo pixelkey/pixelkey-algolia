@@ -1,6 +1,6 @@
 <?php
 
-use \PixelKey\Algolia\Commands\RunIndexers;
+use PixelKey\Algolia\Commands\RunIndexers;
 
 add_action( 'admin_menu', function() {
     add_options_page( 'Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', function() {
@@ -31,12 +31,13 @@ add_action( 'admin_menu', function() {
                 $indexerClasses = [];
 
                 foreach(RunIndexers::getIndexers() as $indexer) {
-                    $indexerClasses[] = (is_object($indexer)) ? get_class($indexer): $indexer;
+                    $indexerClasses[] = get_class($indexer);
                 }
 
                 if(!in_array($indexerName, $indexerClasses)) {
                     throw new \Exception('Class does not exist as Indexer.');
                 }
+
                 $indexer = new $indexerName();
                 $indexer::index();
 
@@ -57,7 +58,7 @@ add_action( 'admin_menu', function() {
         ";
 
         foreach(RunIndexers::getIndexers() as $indexer) {
-            $instance = ($indexer instanceof \PixelKey\Algolia\Indexers\IndexerAbstract) ? $indexer : new $indexer();
+            $instance = $indexer;
             $indexerName = get_class($instance);
 
             echo "<form action='?page=algolia-indexing' method='post'>

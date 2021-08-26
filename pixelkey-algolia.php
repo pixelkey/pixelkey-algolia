@@ -15,9 +15,9 @@
 namespace PixelKey\Algolia;
 
 include 'PixelKeyAutoloader.php';
-include 'Setup.php';
 include 'SettingsPage.php';
+include 'PostHooks.php';
+include 'Setup.php';
 
+PostHooks::init();
 Setup::init();
-
-
