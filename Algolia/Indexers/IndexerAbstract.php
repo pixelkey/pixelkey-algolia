@@ -7,6 +7,8 @@ abstract class IndexerAbstract {
     const REMOTE_NAME = '';
     const POST_TYPE = '';
 
-    abstract public static function index($ids = false);
+    abstract public static function index($ids = []);
+
+    abstract public static function remove($ids = []);
 
 }
