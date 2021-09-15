@@ -19,6 +19,8 @@ class PostHooks {
                 $indexer::index([$postId]);
             }
         }
+
+        do_action('pixelkey_algolia:update_success');
     }
 
     public static function onPostStatusTransition($newStatus, $oldStatus, $post) {
@@ -32,5 +34,7 @@ class PostHooks {
                 $indexer::remove([$post->ID]);
             }
         }
+
+        do_action('pixelkey_algolia:update_success');
     }
 }

@@ -36,4 +36,12 @@ class RunIndexers implements CommandInterface {
             }
         });
     }
+
+    public static function runAsCron() {
+        do_action('pixelkey_algolia:before_index_cron');
+
+        self::run();
+
+        do_action('pixelkey_algolia:after_index_cron');
+    }
 }

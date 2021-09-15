@@ -15,7 +15,7 @@ class Setup {
     public static function initializeCronJob() {
         add_action(
             'pixelkey_algolia/run_indexers',
-            array(RunIndexers::class, 'run'),
+            array(RunIndexers::class, 'runAsCron'),
             100
         );
 
