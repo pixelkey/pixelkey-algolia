@@ -62,4 +62,4 @@ add_filter( 'pixelkey_algolia_add_custom_indexer', function($collector) {
 });
 ```
 
-the This adds it to the list of indexers the module is aware of, and it will now automatically trigger this indexer during the scheduled tasks, manual triggers from the admin, or any update/save/edit hook on the particular post type it's assigned to.
+This adds it to the list of indexers the module is aware of, and it will now automatically trigger this indexer during the scheduled tasks, manual triggers from the admin, or any update/save/edit hook on the particular post type it's assigned to.
