@@ -39,6 +39,9 @@ class CustomArticle extends IndexerAbstract {
 
     }
     
+    /** We need access to the index in order to perform operations on that. This module includes the 
+     * Algolia PHP client as a dependency, so we can use that to get access to the index using your
+     * Algolia application credentials */
     protected static function _getIndexObject() {
         $client = \Algolia\AlgoliaSearch\SearchClient::create(
         //Your credentials here
