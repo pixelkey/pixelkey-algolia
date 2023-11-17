@@ -1,0 +1,19 @@
+{
+    "name": "pixelkey/pixelkey-algolia",
+    "type": "composer-plugin",
+    "require": {
+        "algolia/algoliasearch-client-php": "3.4.1"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "PixelKey\\Algolia\\": "pixelkey-algolia.php"
+        }
+    },
+    "authors": [
+        {
+            "name": "PixelKey",
+            "email": "support@pixelkey.com"
+        }
+    ]
+}

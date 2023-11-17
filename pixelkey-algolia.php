@@ -12,7 +12,7 @@
  * Requires PHP: 7.2.0
  *
  */
-namespace PixelKey\Algolia;
+require 'vendor/autoload.php';
 
 include 'PixelKeyAutoloader.php';
 include 'SettingsPage.php';
