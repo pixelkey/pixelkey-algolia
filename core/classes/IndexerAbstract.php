@@ -1,6 +1,6 @@
 <?php
 
-namespace PixelKey\Algolia\Indexers;
+namespace PixelKey\Algolia;
 
 abstract class IndexerAbstract {
     const DISPLAY_NAME = '';

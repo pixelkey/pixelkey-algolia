@@ -1,8 +1,8 @@
 <?php
 
-namespace PixelKey\Algolia;
+// namespace PixelKey\Algolia;
 
-use PixelKey\Algolia\Commands\RunIndexers;
+use PixelKey\Algolia\RunIndexers;
 
 class PostHooks {
     public static function init() {

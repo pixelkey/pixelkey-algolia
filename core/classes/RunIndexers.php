@@ -1,8 +1,8 @@
 <?php
 
-namespace PixelKey\Algolia\Commands;
+namespace PixelKey\Algolia;
 
-use PixelKey\Algolia\Indexers\IndexerAbstract;
+// use PixelKey\Algolia\Indexers\IndexerAbstract;
 
 class RunIndexers implements CommandInterface {
     public static function run($indexers = false) {
@@ -43,5 +43,10 @@ class RunIndexers implements CommandInterface {
         self::run();
 
         do_action('pixelkey_algolia:after_index_cron');
+    }
+
+    public static function testing(){
+        echo "Teesting";
+        console_log("Testing");
     }
 }

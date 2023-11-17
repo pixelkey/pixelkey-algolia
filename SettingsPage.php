@@ -1,6 +1,6 @@
 <?php
 
-use PixelKey\Algolia\Commands\RunIndexers;
+use PixelKey\Algolia\RunIndexers;
 
 add_action( 'admin_menu', function() {
     add_options_page( 'Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', function() {
@@ -56,19 +56,21 @@ add_action( 'admin_menu', function() {
                 " . wp_nonce_field() . "
             </form>
         ";
+            
+        RunIndexers::testing();
 
-        foreach(RunIndexers::getIndexers() as $indexer) {
-            $instance = $indexer;
-            $indexerName = get_class($instance);
+        // foreach(RunIndexers::getIndexers() as $indexer) {
+        //     $instance = $indexer;
+        //     $indexerName = get_class($instance);
 
-            echo "<form action='?page=algolia-indexing' method='post'>
-                <input type='hidden' name='page' value='algolia-indexing' />
-                <input type='hidden' name='index' value='$indexerName'>
+        //     echo "<form action='?page=algolia-indexing' method='post'>
+        //         <input type='hidden' name='page' value='algolia-indexing' />
+        //         <input type='hidden' name='index' value='$indexerName'>
                 
-                <button class='button button-primary' name='action' value='run_index'>Run " . $instance::DISPLAY_NAME . " Indexer</button><br/><br />
-                " . wp_nonce_field() . "
-            </form>";
-        }
+        //         <button class='button button-primary' name='action' value='run_index'>Run " . $instance::DISPLAY_NAME . " Indexer</button><br/><br />
+        //         " . wp_nonce_field() . "
+        //     </form>";
+        // }
 
         echo "</div>";
 

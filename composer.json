@@ -7,7 +7,7 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "PixelKey\\Algolia\\": "pixelkey-algolia.php"
+            "PixelKey\\Algolia\\": "core/includes/classes"
         }
     },
     "authors": [
