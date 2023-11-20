@@ -7,12 +7,18 @@
  *
  * Plugin Name:  Pixel Key Algolia
  * Description:  Provides indexing services for Algolia
- * Version:      0.1.4
+ * Version:      1.0.1
  * Text Domain:  pixelkey-algolia
  * Domain Path:  /languages/
  * Requires PHP: 7.2.0
  *
  */
+
+// Plugin name
+define('PIXELKEY_ALGOLIA_PLUGIN_NAME',    'Pixel Key Algolia');
+
+// Plugin version
+define('PIXELKEY_ALGOLIA_PLUGIN_VERSION',        '1.0.1');
 
 // Plugin Root File
 define('PIXELKEY_ALGOLIA_PLUGIN_FILE',    __FILE__);
@@ -20,51 +26,28 @@ define('PIXELKEY_ALGOLIA_PLUGIN_FILE',    __FILE__);
 // Plugin Folder Path
 define('PIXELKEY_ALGOLIA_PLUGIN_DIR',    plugin_dir_path(PIXELKEY_ALGOLIA_PLUGIN_FILE));
 
+// Plugin Folder URL
+define('PIXELKEY_ALGOLIA_PLUGIN_URL',    plugin_dir_url(PIXELKEY_ALGOLIA_PLUGIN_FILE));
+
 // Autoload Composer
 require PIXELKEY_ALGOLIA_PLUGIN_DIR . '/vendor/autoload.php';
 
-use Algolia\AlgoliaSearch\SearchClient;
-use Algolia\AlgoliaSearch\SearchIndex;
+/**
+ * Load the main class for the core functionality
+ */
+require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/PixelkeyAlgolia.php';
 
-include 'PixelKeyAutoloader.php';
-include 'SettingsPage.php';
-include 'PostHooks.php';
-include 'Setup.php';
-
-PostHooks::init();
-Setup::init();
-
-
-
-class AlgoliaHelperchanged
+/**
+ * The main function to load the only instance
+ * of our master class.
+ *
+ * @author  Pixel Key
+ * @since   1.0.0
+ * @return  object|PixelkeyAlgolia
+ */
+function PixelkeyAlgolia()
 {
-
-    static $client;
-    static $postIndex;
-
-    public static function initialize()
-    {
-        $appId = "3UUYP16FCB";
-        $apiKey = "9c2329d498e556cb7d05d951f1d7da32";
-
-        if (!$appId || !$apiKey) {
-            return;
-        }
-
-        if (!static::$client) {
-            static::$client = SearchClient::create(
-                $appId,
-                $apiKey
-            );
-            console_log(static::$client);
-            static::$postIndex = static::$client->initIndex(env('ALGOLIA_POST_INDEX'));
-        }
-    }
-
-    public static function getPostsFromSearch(string $searchString)
-    {
-        return static::$postIndex->search($searchString);
-    }
+    return PixelkeyAlgolia::instance();
 }
 
-// AlgoliaHelperchanged::initialize();
+PixelkeyAlgolia();
