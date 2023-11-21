@@ -59,7 +59,7 @@ if (!class_exists('PixelkeyAlgolia')) :
          */
         public function __clone()
         {
-            _doing_it_wrong(__FUNCTION__, __('You are not allowed to clone this class.', 'ga-custom-analytics'), '1.0.0');
+            _doing_it_wrong(__FUNCTION__, __('You are not allowed to clone this class.', 'pixelkey-algolia'), '1.0.1');
         }
 
         /**
@@ -71,7 +71,7 @@ if (!class_exists('PixelkeyAlgolia')) :
          */
         public function __wakeup()
         {
-            _doing_it_wrong(__FUNCTION__, __('You are not allowed to unserialize this class.', 'ga-custom-analytics'), '1.0.0');
+            _doing_it_wrong(__FUNCTION__, __('You are not allowed to unserialize this class.', 'pixelkey-algolia'), '1.0.1');
         }
 
         /**
