@@ -30,25 +30,18 @@ abstract class IndexerAbstract
     }
 
     /**
-     * Creates an Algolia search client using the provided credentials.
+     * Saves posts to the Algolia index.
      *
-     * @return \Algolia\AlgoliaSearch\SearchClient|false The Algolia search client instance if successful, false otherwise.
+     * @param array $records The records to be saved.
+     * @return bool Returns true if the save operation is successful, false otherwise.
      */
-    public static function createAlgoliaSearchClient()
+    public static function _savePosts($records = [])
     {
-        $key = (array) apply_filters('initialize_algolia_key', []);
-        $appId = key_exists('appId', $key) ? $key['appId'] : null;
-        $apiKey = key_exists('apiKey', $key) ? $key['apiKey'] : null;
-
         try {
-            if (!$appId || !$apiKey) {
-                new \Exception('Algolia credentials not found');
-            }
-
-            $algolia = \Algolia\AlgoliaSearch\SearchClient::create($appId, $apiKey);
-            return $algolia;
+            $index = self::_getIndexObject();
+            $index->saveObjects($records);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($e->getMessage());
             return false;
         }
     }
@@ -61,30 +54,34 @@ abstract class IndexerAbstract
     public static function _getIndexObject()
     {
         $algolia = self::createAlgoliaSearchClient();
-        $indexName = static::REMOTE_NAME;
 
         try {
-            $index = $algolia->initIndex($indexName);
+            $index = $algolia->initIndex(static::REMOTE_NAME);
             return $index;
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($e->getMessage());
             return false;
         }
     }
 
     /**
-     * Saves posts to the Algolia index.
+     * Creates an Algolia search client using the provided credentials.
      *
-     * @param array $records The records to be saved.
-     * @return bool Returns true if the save operation is successful, false otherwise.
+     * @return \Algolia\AlgoliaSearch\SearchClient|false The Algolia search client instance if successful, false otherwise.
      */
-    public static function _savePosts($records = [])
+    public static function createAlgoliaSearchClient()
     {
+        // Retrieve the appId and apiKey from the 'initialize_algolia_key' filter.
+        // If the filter does not return an array, the default values of null are used.
+        ['appId' => $appId, 'apiKey' => $apiKey] = (array) apply_filters('initialize_algolia_key', []) + ['appId' => null, 'apiKey' => null];
+
         try {
-            $index = static::_getIndexObject();
-            $index->saveObjects($records);
+            if (!$appId || !$apiKey) new \Exception('Algolia credentials not found');
+
+            $algolia = \Algolia\AlgoliaSearch\SearchClient::create($appId, $apiKey);
+            return $algolia;
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($e->getMessage());
             return false;
         }
     }
