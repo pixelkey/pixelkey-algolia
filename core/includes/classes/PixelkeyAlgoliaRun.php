@@ -87,7 +87,7 @@ class PixelkeyAlgoliaRun
                 try {
                     echo '<div class="run-index__status"><b>Running All Indexers</b>' . PHP_EOL;
                     PixelkeyAlgolia()->runIndexers::run();
-                    foreach (RunIndexers::getIndexers() as $indexer) {
+                    foreach (PixelkeyAlgolia()->runIndexers as $indexer) {
                         $indexerName = $indexer::DISPLAY_NAME;
                         echo "<div>Running $indexerName indexer... ✓</div>";
                     }
