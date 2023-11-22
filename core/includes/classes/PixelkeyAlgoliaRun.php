@@ -44,10 +44,9 @@ class PixelkeyAlgoliaRun
         add_action('admin_enqueue_scripts', array($this, 'enqueue_backend_scripts_and_styles'), 20);
         add_action('admin_menu', array($this, 'register_custom_admin_menu_pages'), 20);
 
-        add_action('save_post', [self::class, 'onPostSaveAndUpdate']);
-        add_action('transition_post_status', [self::class, 'onPostStatusTransition'], 10, 3);
+        add_action('save_post', array(PixelkeyAlgolia()->helpers, 'onPostSaveAndUpdate'), 10, 3);
 
-        add_action(self::$eventName, array(PixelkeyAlgolia()->runIndexers, 'runAsCron'));
+        add_action(self::$eventName, array(PixelkeyAlgolia()->helpers, 'runAsCron'));
         register_activation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'activation_hook_callback'));
         register_deactivation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'deactivate_hook_callback'));
     }
@@ -78,71 +77,32 @@ class PixelkeyAlgoliaRun
     public function register_custom_admin_menu_pages()
     {
         add_options_page('Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', function () {
-            echo "
-                <h3>Algolia Indexing Control</h3>
-                <div class='run-index__wrapper'>
-            ";
+            $indexerName = apply_filters('algolia_index_name', 'post');
+            $action = $_POST['action'] ?? '';
 
-            if (isset($_POST['action']) && $_POST['action'] === 'run_all') {
-                try {
-                    echo '<div class="run-index__status"><b>Running All Indexers</b>' . PHP_EOL;
-                    PixelkeyAlgolia()->runIndexers::run();
-                    foreach (PixelkeyAlgolia()->runIndexers as $indexer) {
-                        $indexerName = $indexer::DISPLAY_NAME;
-                        echo "<div>Running $indexerName indexer... ✓</div>";
-                    }
-                    echo '</div>';
-                } catch (\Exception $exception) {
-                    echo $exception->getMessage();
-                }
+            // Check if a valid action is submitted and process it
+            $statusMessage = '';
+            if ($action) {
+                $statusMessage = PixelkeyAlgolia()->helpers->processIndexAction($action, $indexerName);
+            }
+            // Start output buffering
+            ob_start();
+
+            echo "<h3>Algolia Indexing Control</h3>
+                  <div class='run-index__wrapper'>";
+
+            // Output status message if set
+            if ($statusMessage) {
+                echo $statusMessage;
             }
 
-            if (isset($_POST['action']) && $_POST['action'] === 'run_index') {
-                try {
-                    $indexerName = str_replace('\\\\', '\\', $_POST['index']);
-
-                    $indexerClasses = [];
-
-                    foreach (PixelkeyAlgolia()->runIndexers::getIndexers() as $indexer) {
-                        $indexerClasses[] = get_class($indexer);
-                    }
-
-                    if (!in_array($indexerName, $indexerClasses)) {
-                        throw new \Exception('Class does not exist as Indexer.');
-                    }
-
-                    $indexer = new $indexerName();
-                    $indexer::index();
-
-                    echo '<div class="run-index__status">Running the <b>' . $indexer::DISPLAY_NAME . '</b> indexer... ✓</div>';
-                } catch (\Exception $exception) {
-                    echo '<div class="run-index__failed-status">There has been a problem running the <b>' . $indexer::DISPLAY_NAME . '</b> indexer ❌</div>';
-                    throw $exception; //Rethrow so it can be displayed or logged at the environments discretion
-                }
-            }
-
-            echo "
-                <form action='?page=algolia-indexing' method='post'>
-                    <input type='hidden' name='page' value='algolia-indexing' />
-                    <button class='button button-primary' name='action' value='run_all'>Run All Indexers</button><br /><br/>
-                    " . wp_nonce_field() . "
-                </form>
-            ";
-
-            foreach (PixelkeyAlgolia()->runIndexers::getIndexers() as $indexer) {
-                $instance = $indexer;
-                $indexerName = get_class($instance);
-
-                echo "<form action='?page=algolia-indexing' method='post'>
-                    <input type='hidden' name='page' value='algolia-indexing' />
-                    <input type='hidden' name='index' value='$indexerName'>
-
-                    <button class='button button-primary' name='action' value='run_index'>Run " . $instance::DISPLAY_NAME . " Indexer</button><br/><br />
-                    " . wp_nonce_field() . "
-                </form>";
-            }
+            // Output forms
+            PixelkeyAlgolia()->helpers->outputIndexerForms($indexerName);
 
             echo "</div>";
+
+            // End output buffering and output everything at once
+            echo ob_get_clean();
         });
     }
 
@@ -180,50 +140,5 @@ class PixelkeyAlgoliaRun
         if (wp_next_scheduled(self::$eventName)) {
             wp_clear_scheduled_hook(self::$eventName);
         }
-    }
-
-    /**
-     * This method is called when a post is saved or updated.
-     * It indexes the post using the appropriate indexers if the post type is supported and the post status is 'publish'.
-     *
-     * @param int $postId The ID of the post being saved or updated.
-     * @return void
-     */
-    public static function onPostSaveAndUpdate($postId)
-    {
-        $indexers = PixelkeyAlgolia()->runIndexers::getIndexers();
-        $post = get_post($postId);
-
-        foreach ($indexers as $indexer) {
-            if ($indexer::POST_TYPE === $post->post_type && $post->post_status === 'publish') {
-                $indexer::index([$postId]);
-            }
-        }
-
-        do_action('pixelkey_algolia:update_success');
-    }
-
-    /**
-     * Handles the post status transition event.
-     *
-     * @param string $newStatus The new status of the post.
-     * @param string $oldStatus The old status of the post.
-     * @param WP_Post $post The post object.
-     * @return void
-     */
-    public static function onPostStatusTransition($newStatus, $oldStatus, $post)
-    {
-        if ($newStatus == 'publish' || $newStatus == $oldStatus) return;
-
-        $indexers = PixelkeyAlgolia()->runIndexers::getIndexers();
-        $post = get_post($post->ID);
-
-        foreach ($indexers as $indexer) {
-            if ($indexer::POST_TYPE === $post->post_type) {
-                $indexer::remove([$post->ID]);
-            }
-        }
-
-        do_action('pixelkey_algolia:update_success');
     }
 }

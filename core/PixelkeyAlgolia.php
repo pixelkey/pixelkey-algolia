@@ -40,13 +40,13 @@ if (!class_exists('PixelkeyAlgolia')) :
         private static $instance;
 
         /**
-         * pixelkey-algolia runIndexers object.
+         * pixelkey-algolia indexer object.
          *
          * @access	public
          * @since	1.0.0
-         * @var		object|RunIndexers
+         * @var		object|$indexer
          */
-        public $runIndexers;
+        public $indexer;
 
         /**
          * PixelkeyAlgoliaHelpers object.
@@ -100,8 +100,8 @@ if (!class_exists('PixelkeyAlgolia')) :
                 self::$instance                    = new PixelkeyAlgolia;
                 self::$instance->base_hooks();
                 self::$instance->includes();
-                self::$instance->runIndexers      = new RunIndexers();
                 self::$instance->helpers          = new PixelkeyAlgoliaHelpers();
+                self::$instance->indexer          = new AlgoliaIndexer();
 
                 //Fire the plugin logic
                 new PixelkeyAlgoliaRun();
@@ -125,10 +125,8 @@ if (!class_exists('PixelkeyAlgolia')) :
          */
         private function includes()
         {
-            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/CommandInterface.php';
-            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/IndexerAbstract.php';
+            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/AlgoliaIndexer.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaRun.php';
-            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/RunIndexers.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaHelpers.php';
         }
         /**

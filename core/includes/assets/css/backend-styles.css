@@ -1,22 +1,16 @@
 .run-index__wrapper {
-    margin: 5px 20px 2px 0;
-    padding      : 20px;
-    background   : #FFF;
-    border       : 1px solid #AAA;
-    border-radius: 3px;
+    margin        : 5px 20px 2px 0;
+    padding       : 20px;
+    background    : #FFF;
+    border        : 1px solid #AAA;
+    border-radius : 3px;
+    display       : flex;
+    gap           : 1rem;
+    flex-direction: column;
 }
 
 .run-index__status {
-    padding      : 10px;
-    background   : #9ece7f;
-    border       : 1px solid #888;
-    margin-bottom: 20px;
-}
-
-
-.run-index__failed-status {
-    padding      : 10px;
-    background   : #ce7f7f;
-    border       : 1px solid #888;
-    margin-bottom: 20px;
+    padding: 10px;
+    font-size: 1.1rem;
+    max-width: max-content;
 }
