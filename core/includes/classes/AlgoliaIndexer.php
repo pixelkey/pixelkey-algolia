@@ -58,7 +58,7 @@ class AlgoliaIndexer
 
         $iterator = new Algolia_Post_Iterator($type, $queryArgs);
 
-        $index->replaceAllObjects($iterator);
+        $index->saveObjects($iterator);
     }
 }
 
