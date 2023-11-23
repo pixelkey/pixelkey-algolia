@@ -66,7 +66,7 @@ class PixelkeyAlgoliaHelpers
      */
     public function onPostSaveAndUpdate($id, \WP_Post $post, $update)
     {
-        if (wp_is_post_revision($id) || wp_is_post_autosave($id)) {
+        if (wp_is_post_revision($id) || wp_is_post_autosave($id) || $post->post_type !== 'post') {
             return $post;
         }
         $algolia = PixelkeyAlgolia()->indexer->createAlgoliaSearchClient();
