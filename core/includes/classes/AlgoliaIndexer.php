@@ -59,8 +59,6 @@ class AlgoliaIndexer
         $iterator = new Algolia_Post_Iterator($type, $queryArgs);
 
         $index->replaceAllObjects($iterator);
-
-        PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event('Iterator Reindexing complete');
     }
 }
 
