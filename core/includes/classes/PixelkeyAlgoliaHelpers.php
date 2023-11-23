@@ -107,10 +107,10 @@ class PixelkeyAlgoliaHelpers
 
             try {
                 // Schedule a one-time event to run as soon as possible.
-                if (false === wp_schedule_single_event(time(), 'pixelkey_algolia/run_indexers')) {
+                $isScheduled = wp_schedule_single_event(time(), 'pixelkey_algolia/run_indexers');
+                if (!$isScheduled || ($isScheduled instanceof WP_Error)) {
                     throw new \Exception('Unable to schedule the event.');
                 }
-
                 $message = ($action === 'run_all') ? 'Cron job is running for all indexers.' : "Cron job is running for $indexerName indexer.";
                 $message .= " It takes a few minutes to complete. You can continue working on other tasks.";
 
