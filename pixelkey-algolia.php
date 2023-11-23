@@ -7,10 +7,10 @@
  *
  * Plugin Name:  Pixel Key Algolia
  * Description:  Provides indexing services for Algolia
- * Version:      1.0.1
+ * Version:      1.0.2
  * Text Domain:  pixelkey-algolia
  * Domain Path:  /languages/
- * Requires PHP: 7.2.0
+ * Requires PHP: ^7.3
  *
  */
 
@@ -18,7 +18,7 @@
 define('PIXELKEY_ALGOLIA_PLUGIN_NAME',    'Pixel Key Algolia');
 
 // Plugin version
-define('PIXELKEY_ALGOLIA_PLUGIN_VERSION',        '1.0.1');
+define('PIXELKEY_ALGOLIA_PLUGIN_VERSION',        '1.0.2');
 
 // Plugin Root File
 define('PIXELKEY_ALGOLIA_PLUGIN_FILE',    __FILE__);

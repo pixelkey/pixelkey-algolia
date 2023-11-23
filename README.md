@@ -1,15 +1,10 @@
-# Pixelkey-algolia v1.0.1
+# Pixelkey-algolia v1.0.2
 
-This module provides helper classes to allow you to integreate custom Algolia indexing into your Wordpress applications. It contains some useful hooks, scheduled indexing cron tasks, and an admin interface to see and trigger your custom indexers. Since this is designed to be used to create a custom indexing experience, it's expected you have a fairly good understanding of how Algolia indexing works in general. This module will not index your posts for you, and no default indexing is included.
+This module offers helper classes that enable the integration of custom Algolia indexing within your WordPress applications. It includes several useful hooks, scheduled indexing cron tasks, and an administrative interface to monitor and initiate your custom indexers. As this module is intended to facilitate the creation of a tailored indexing experience, it is expected that you possess a solid understanding of Algolia indexing principles. Please note that this module does not perform post indexing on your behalf, and no default indexing configurations are provided. Thus, you will need to implement the following filters in your theme:
 
 ### Initialize Algolia ``` App_ID ``` and ``` API_Key ```
 
 ```
-/**
- * This function is a filter callback that initializes the Algolia key.
- *
- * @return array The Algolia key with 'app_id' and 'api_key' values.
- */
 add_filter('initialize_algolia_key', function () {
     $algolia_key = [
         'appId' => "xxxxxx",
@@ -19,62 +14,64 @@ add_filter('initialize_algolia_key', function () {
 }, 10, 1);
 
 ```
-
-### Custom Indexer
-To create a custom indexer, you will need to create a new class that extends from the IndexerAbstract class. Lets create an indexer for a custom post type for Articles: `article`.
+### Initialize `Algolia index_name`
 
 ```
-use PixelKey\Algolia\IndexerAbstract;
+add_filter('algolia_index_name', function ($post_type = 'post') {
+    return 'post_index_name';
+}, 10, 1);
 
-class CustomArticle extends IndexerAbstract {
-    const DISPLAY_NAME = 'Article'; //This is what the indexer is called in the admin area
-    const REMOTE_NAME = 'article_index'; //This is the literal name of the target index inside the algolia dashboard
-    const POST_TYPE = 'article'; //This is the custom post type we want to index
-
-    public static function index($ids = []){
-     /* This function is called by the cron, the admin area, and by post update/edit/save hooks.
-      * This is where you would implementyour custom indexing logic. $ids is a list of post ids passed
-      * in by the hooks. For a full re-index triggered by the cron or admin, no $ids will be present */
-      $articles = static::_getArticles($ids); //Needs to be implemented for your specific use case.
-      $indexSuccesful = self::_savePosts($articles);; //You might consider batching these
-      
-      return $indexSuccesful;
-    }
-
-    /**
-     * Retrieves articles based on the provided IDs.
-     *
-     * @param array $ids The IDs of the articles to retrieve.
-     * @return array The retrieved articles.
-     */
-    protected static function _getArticles($ids)
-    {
-        $arguments = [
-            'post_type' => 'post',
-            'post_status' => 'publish',
-            'numberposts' => -1
-        ];
-
-        if ($ids) {
-            $arguments['include'] = $ids;
-        }
-
-        return get_posts($arguments);
-    }
-}
 ```
-
-### Add the indexer to the site
-Now that we have the indexer prepared, we need to add it to the list of indexers available to the module. We can do that using a filter:
-```
-add_filter( 'pixelkey_algolia_add_custom_indexer', function($collector) {
-  $collector[] = new Indexers\CustomArticle();
-
-  return $collector;
-});
-```
-
 This adds it to the list of indexers the module is aware of, and it will now automatically trigger this indexer during the scheduled tasks, manual triggers from the admin, or any update/save/edit hook on the particular post type it's assigned to.
+
+### Filter query Arguments `[Optional]`
+
+```
+// Example: Filter the post query arguments to remove posts with 'teaser' category slug.
+add_filter('post_query_args', function ($args) {
+    $args['tax_query'] = [
+        [
+            'taxonomy' => 'category',
+            'field' => 'slug',
+            'terms' => 'teaser',
+            'operator' => 'NOT IN'
+        ]
+    ];
+    return $args;
+});
+
+```
+
+### Serialize the `post object` to an `array` before sending it to Algolia.
+
+```
+/**
+ * This filter is used by the Pixelkey-Algolia plugin.
+ * @param \WP_Post $post The post object to serialize.
+ * @return array The serialized post object.
+ */
+function algolia_post_to_record(WP_Post $post) {
+    $tags = array_map(function (WP_Term $term) {
+        return $term->name;
+    }, wp_get_post_terms($post->ID, 'post_tag'));
+
+    return [
+        'objectID' => implode('#', [$post->post_type, $post->ID]),
+        'title' => $post->post_title,
+        'author' => [
+            'id' => $post->post_author,
+            'name' => get_user_by('ID', $post->post_author)->display_name,
+        ],
+        'excerpt' => $post->post_excerpt,
+        'content' => strip_tags($post->post_content),
+        'tags' => $tags,
+        'url' => get_post_permalink($post->ID),
+        'custom_field' => get_post_meta($post->id, 'custom_field_name'),
+    ];
+}
+add_filter('post_to_record', 'algolia_post_to_record');
+
+```
 
 ### Additional Action hook Available
 1. Trigger Specific actions before the cron runs
