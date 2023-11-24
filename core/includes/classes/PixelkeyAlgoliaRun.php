@@ -78,34 +78,7 @@ class PixelkeyAlgoliaRun
      */
     public function register_custom_admin_menu_pages()
     {
-        add_options_page('Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', function () {
-            $indexerName = apply_filters('algolia_index_name', 'post');
-            $action = $_POST['action'] ?? '';
-
-            // Check if a valid action is submitted and process it
-            $statusMessage = '';
-            if ($action) {
-                $statusMessage = PixelkeyAlgolia()->helpers->processIndexAction($action, $indexerName);
-            }
-            // Start output buffering
-            ob_start();
-
-            echo "<h3>Algolia Indexing Control</h3>
-                  <div class='run-index__wrapper'>";
-
-            // Output status message if set
-            if ($statusMessage) {
-                echo $statusMessage;
-            }
-
-            // Output forms
-            PixelkeyAlgolia()->helpers->outputIndexerForms($indexerName);
-
-            echo "</div>";
-
-            // End output buffering and output everything at once
-            echo ob_get_clean();
-        });
+        add_options_page('Algolia Indexing', 'Algolia Indexing', 'manage_options', 'algolia-indexing', array(PixelkeyAlgolia()->helpers, 'pixelkey_algolia_admin_menu_page_callback'));
     }
 
     /**

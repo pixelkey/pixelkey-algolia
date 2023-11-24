@@ -64,9 +64,9 @@ class PixelkeyAlgoliaHelpers
      * @param int $postId The ID of the post being saved or updated.
      * @return void
      */
-    public function onPostSaveAndUpdate($id, \WP_Post $post, $update)
+    public function onPostSaveAndUpdate($id, WP_Post $post, $update)
     {
-        if (wp_is_post_revision($id) || wp_is_post_autosave($id) || $post->post_type !== 'post') {
+        if (wp_is_post_revision($id) || wp_is_post_autosave($id) || !has_filter($post->post_type . '_to_record')) {
             return $post;
         }
         $algolia = PixelkeyAlgolia()->indexer->createAlgoliaSearchClient();
@@ -88,6 +88,52 @@ class PixelkeyAlgoliaHelpers
         do_action('pixelkey_algolia:update_success');
     }
 
+    /**
+     * Add custom menu page content for the following
+     * menu item: algolia-indexing
+     *
+     * @access public
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function pixelkey_algolia_admin_menu_page_callback()
+    {
+        $indexerName = apply_filters('algolia_index_name', 'post');
+        $action = $_POST['action'] ?? '';
+
+        // Check if a valid action is submitted and process it
+        $statusMessage = '';
+        if ($action) {
+            $statusMessage = $this->processIndexAction($action, $indexerName);
+        }
+
+        echo "<h3>Algolia Indexing Control</h3>
+                  <div class='run-index__wrapper'>";
+
+        // Output status message if set
+        if ($statusMessage) {
+            echo $statusMessage;
+        }
+
+        // Output forms
+        $this->outputIndexerForms($indexerName);
+
+        echo "</div>";
+
+        // Check if the form has been submitted
+        if (isset(
+            $_POST['batch_size'],
+        )) {
+            // Sanitize the input
+            $batch_size = wp_unslash($_POST['batch_size']);
+
+            // Update or add options as necessary
+            update_option('batch_size', $batch_size);
+        }
+        // Render the admin page HTML
+        PixelkeyAlgolia()->html->pixelkey_algolia_admin_menu_page_render();
+    }
     /**
      * Process the index action and return the result.
      * - If the action is 'run_all' or 'run_index', it runs the indexing process as a cron job.

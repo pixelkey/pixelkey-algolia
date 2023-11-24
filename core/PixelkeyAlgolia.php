@@ -58,6 +58,15 @@ if (!class_exists('PixelkeyAlgolia')) :
         public $helpers;
 
         /**
+         * PixelkeyAlgoliaHtml object.
+         *
+         * @access	public
+         * @since	1.0.0
+         * @var		object|PixelkeyAlgoliaHtml
+         */
+        public $html;
+
+        /**
          * Throw error on object clone.
          *
          * Cloning instances of the class is forbidden.
@@ -102,6 +111,7 @@ if (!class_exists('PixelkeyAlgolia')) :
                 self::$instance->includes();
                 self::$instance->helpers          = new PixelkeyAlgoliaHelpers();
                 self::$instance->indexer          = new AlgoliaIndexer();
+                self::$instance->html             = new PixelkeyAlgoliaHtml();
 
                 //Fire the plugin logic
                 new PixelkeyAlgoliaRun();
@@ -128,6 +138,7 @@ if (!class_exists('PixelkeyAlgolia')) :
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/AlgoliaIndexer.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaRun.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaHelpers.php';
+            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaHtml.php';
         }
         /**
          * Add base hooks for the core functionality
