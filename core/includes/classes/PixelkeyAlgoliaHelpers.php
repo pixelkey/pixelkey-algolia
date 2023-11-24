@@ -45,14 +45,14 @@ class PixelkeyAlgoliaHelpers
      * Runs the indexing process as a cron job.
      * 
      * This method triggers the 'pixelkey_algolia:before_index_cron' action before starting the indexing process,
-     * then calls the 'reindex_post_atomic' method of the indexer to reindex the 'post' type.
+     * then calls the 'reindex_post_batch' method of the indexer to reindex the 'post' type.
      * Finally, it triggers the 'pixelkey_algolia:after_index_cron' action after completing the indexing process.
      */
     public function runAsCron()
     {
         do_action('pixelkey_algolia:before_index_cron');
 
-        PixelkeyAlgolia()->indexer->reindex_post_atomic('post');
+        PixelkeyAlgolia()->indexer->reindex_post_batch('post');
 
         do_action('pixelkey_algolia:after_index_cron');
     }
@@ -121,6 +121,7 @@ class PixelkeyAlgoliaHelpers
                 return '<div class="notice notice-error run-index__status">There has been a problem running the indexers ❌</div>';
             }
         }
+        return '';
     }
 
     /**
@@ -141,5 +142,22 @@ class PixelkeyAlgoliaHelpers
             <button class='button button-primary' name='action' value='run_index'>Run $indexerName Indexer</button>
             $nonceField
         </form>";
+    }
+
+    /**
+     * Add custom cron schedule intervals
+     */
+    public function add_pixelkey_algolia_cron_interval($schedules)
+    {
+        $intervals = [1]; // Add more intervals as needed
+
+        foreach ($intervals as $interval) {
+            $schedules["{$interval}min"] = [
+                'interval' => $interval * MINUTE_IN_SECONDS,
+                'display' => esc_html__("Every {$interval} Minutes"),
+            ];
+        }
+
+        return $schedules;
     }
 }

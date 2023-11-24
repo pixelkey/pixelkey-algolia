@@ -1,22 +1,32 @@
 <?php
 
+use Algolia\AlgoliaSearch\SearchClient as SearchClient;
+use WP_Query as WP_Query;
+use WP_Post as WP_Post;
+
 class AlgoliaIndexer
 {
+    // Add a batch size property
+    private $batch_size = 200; // Number of posts to process per batch
+    private $daishChainCronEvent = 'pixelkey_algolia_run_daisychain_indexers';
+    private $pageIndex = 'last_processed_page_number';
     /**
      * Creates an Algolia search client using the provided credentials.
      *
      * @return \Algolia\AlgoliaSearch\SearchClient|false The Algolia search client instance if successful, false otherwise.
      */
-    public static function createAlgoliaSearchClient()
+    public function createAlgoliaSearchClient()
     {
         // Retrieve the appId and apiKey from the 'initialize_algolia_key' filter.
         // If the filter does not return an array, the default values of null are used.
         ['appId' => $appId, 'apiKey' => $apiKey] = (array) apply_filters('initialize_algolia_key', []) + ['appId' => null, 'apiKey' => null];
 
         try {
-            if (!$appId || !$apiKey) new \Exception('Algolia credentials not found');
+            if (!$appId || !$apiKey) {
+                new \Exception('Algolia credentials not found');
+            }
 
-            $algolia = \Algolia\AlgoliaSearch\SearchClient::create($appId, $apiKey);
+            $algolia = SearchClient::create($appId, $apiKey);
             return $algolia;
         } catch (\Exception $e) {
             PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event('Algolia credentials not found');
@@ -25,40 +35,55 @@ class AlgoliaIndexer
     }
 
     /**
-     * Method reindex_post_atomic
-     *
-     * This method is responsible for reindexing a single post atomically. 
-     * It ensures that the post is indexed in a way that doesn't interfere with other operations, 
-     * providing a level of isolation between the indexing of individual posts.
-     *
-     * @param int $post_id The ID of the post to be reindexed.
-     *
-     * @return void
-     *
-     * @throws Exception If there is an error during the reindexing process.
+     * Process a batch of posts for reindexing.
      */
-    public static function reindex_post_atomic($assoc_args)
+    public function reindex_post_batch($assoc_args)
     {
-        $algolia = self::createAlgoliaSearchClient();
+        $algolia = $this->createAlgoliaSearchClient();
 
         $type = isset($assoc_args['type']) ? $assoc_args['type'] : 'post';
 
-        $index = $algolia->initIndex(
-            apply_filters('algolia_index_name', $type)
-        );
+        $last_processed_page_number = get_option($this->pageIndex, 1);
 
         $queryArgs = [
-            'posts_per_page' => 100,
+            'post_type' => $type,
+            'posts_per_page' => $this->batch_size,
             'post_status' => 'publish',
+            'orderby' => 'ID',
+            'order' => 'ASC',
+            'paged' => $last_processed_page_number,
         ];
 
         if (has_filter('post_query_args')) {
             $queryArgs = apply_filters('post_query_args', $queryArgs);
         }
 
-        $iterator = new Algolia_Post_Iterator($type, $queryArgs);
+        $query = new WP_Query($queryArgs);
+        $posts = $query->posts;
 
+        if (empty($posts)) {
+            // No more posts to process, reset the option
+            delete_option($this->pageIndex);
+            // also delete the cron job
+            if (wp_next_scheduled($this->daishChainCronEvent)) {
+                wp_clear_scheduled_hook($this->daishChainCronEvent);
+            }
+            return;
+        }
+
+        $iterator = new Algolia_Post_Iterator($type, $posts);
+        
+        $index = $algolia->initIndex(
+            apply_filters('algolia_index_name', $type)
+        );
         $index->saveObjects($iterator);
+
+        // Update the last processed page number
+        update_option($this->pageIndex, $last_processed_page_number + 1);
+        // Schedule the next batch
+        if (!wp_next_scheduled($this->daishChainCronEvent)) {
+            wp_schedule_event(time() + 1 * MINUTE_IN_SECONDS, '1min', $this->daishChainCronEvent);
+        }
     }
 }
 
@@ -73,35 +98,34 @@ class AlgoliaIndexer
  */
 class Algolia_Post_Iterator implements Iterator
 {
-    /**
-     * @var array
-     */
-    private $queryArgs;
-
+    private $type;
+    private $posts;
     private $key;
 
-    private $paged;
-
-    private $posts;
-    private $type;
-
-    public function __construct($type, array $queryArgs = [])
+    /**
+     * Algolia_Post_Iterator constructor.
+     *
+     * @param string $type  The type of the posts.
+     * @param array  $posts Array of WP_Post objects to be indexed.
+     */
+    public function __construct($type, array $posts)
     {
         $this->type = $type;
-        $this->queryArgs = ['post_type' => $type] + $queryArgs;
+        $this->posts = $posts;
+        $this->key = 0;
     }
 
     /**
      * Return the current element.
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         return $this->serialize($this->posts[$this->key]);
     }
 
     /**
-     * Move forward to next element.
-     * Similar to the next() function for arrays in PHP.
+     * Move forward to the next element.
      */
     public function next(): void
     {
@@ -110,47 +134,37 @@ class Algolia_Post_Iterator implements Iterator
 
     /**
      * Return the identifying key of the current element.
-     * Similar to the key() function for arrays in PHP.
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
-        $this->key;
+        return $this->key;
     }
 
     /**
-     * Checks if current position is valid.
+     * Checks if the current position is valid.
      */
     public function valid(): bool
     {
-        if (isset($this->posts[$this->key])) {
-            return true;
-        }
-
-        $this->paged++;
-        $query = new \WP_Query(['paged' => $this->paged] + $this->queryArgs);
-
-        if (!$query->have_posts()) {
-            return false;
-        }
-
-        $this->posts = $query->posts;
-        $this->key = 0;
-
-        return true;
+        return isset($this->posts[$this->key]);
     }
 
     /**
      * Rewind the Iterator to the first element.
-     * Similar to the reset() function for arrays in PHP.
      */
     public function rewind(): void
     {
         $this->key = 0;
-        $this->paged = 0;
-        $this->posts = [];
     }
 
-    private function serialize(\WP_Post $post)
+    /**
+     * Serializes a WP_Post object for Algolia's indexing.
+     *
+     * @param WP_Post $post The post to serialize.
+     *
+     * @return array The serialized post. Uses a filter based on the post type.
+     */
+    private function serialize(WP_Post $post)
     {
         $record = (array) apply_filters($this->type . '_to_record', $post);
 

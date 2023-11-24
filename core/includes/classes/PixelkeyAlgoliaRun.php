@@ -19,7 +19,7 @@ class PixelkeyAlgoliaRun
 {
     // Define the event name for the cron job
     private static $eventName = 'pixelkey_algolia/run_indexers';
-
+    private static $daisyChainEvent = 'pixelkey_algolia_run_daisychain_indexers';
     /**
      * Our PixelkeyAlgoliaRun constructor 
      * to run the plugin logic.
@@ -47,6 +47,8 @@ class PixelkeyAlgoliaRun
         add_action('save_post', array(PixelkeyAlgolia()->helpers, 'onPostSaveAndUpdate'), 10, 3);
 
         add_action(self::$eventName, array(PixelkeyAlgolia()->helpers, 'runAsCron'));
+        add_action(self::$daisyChainEvent, array(PixelkeyAlgolia()->helpers, 'runAsCron'));
+        add_filter('cron_schedules', array(PixelkeyAlgolia()->helpers, 'add_pixelkey_algolia_cron_interval'));
         register_activation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'activation_hook_callback'));
         register_deactivation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'deactivate_hook_callback'));
     }
@@ -113,13 +115,13 @@ class PixelkeyAlgoliaRun
      */
 
     /*
-	 * This function is called on activation of the plugin
-	 *		- Register the cron job
-	 * @access	public
-	 * @since	1.0.0
-	 *
-	 * @return	void
-	 */
+     * This function is called on activation of the plugin
+     *		- Register the cron job
+     * @access	public
+     * @since	1.0.0
+     *
+     * @return	void
+     */
     public function activation_hook_callback()
     {
         if (!wp_next_scheduled(self::$eventName)) {
@@ -128,13 +130,13 @@ class PixelkeyAlgoliaRun
     }
 
     /*
-	 * This function is called on deactivation of the plugin
-	 *
-	 * @access	public
-	 * @since	1.0.0
-	 *
-	 * @return	void
-	 */
+     * This function is called on deactivation of the plugin
+     *
+     * @access	public
+     * @since	1.0.0
+     *
+     * @return	void
+     */
     public function deactivate_hook_callback()
     {
         if (wp_next_scheduled(self::$eventName)) {
