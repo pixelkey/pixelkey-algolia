@@ -1,6 +1,7 @@
 <?php
 // Exit if accessed directly.
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH'))
+    exit;
 
 /**
  * HELPER COMMENT START
@@ -17,7 +18,7 @@ if (!defined('ABSPATH')) exit;
  * HELPER COMMENT END
  */
 
-if (!class_exists('PixelkeyAlgolia')) :
+if (!class_exists('PixelkeyAlgolia')):
 
     /**
      * Main PixelkeyAlgolia Class.
@@ -38,6 +39,15 @@ if (!class_exists('PixelkeyAlgolia')) :
          * @var		object|PixelkeyAlgolia
          */
         private static $instance;
+
+        /**
+         * The settings object.
+         *
+         * @access	public
+         * @since	1.0.0
+         * @var		 object|PixelkeyAlgoliaSettings
+         */
+        public $settings;
 
         /**
          * pixelkey-algolia indexer object.
@@ -106,12 +116,13 @@ if (!class_exists('PixelkeyAlgolia')) :
         public static function instance()
         {
             if (!isset(self::$instance) && !(self::$instance instanceof PixelkeyAlgolia)) {
-                self::$instance                    = new PixelkeyAlgolia;
+                self::$instance = new PixelkeyAlgolia;
                 self::$instance->base_hooks();
                 self::$instance->includes();
-                self::$instance->helpers          = new PixelkeyAlgoliaHelpers();
-                self::$instance->indexer          = new AlgoliaIndexer();
-                self::$instance->html             = new PixelkeyAlgoliaHtml();
+                self::$instance->settings = new PixelkeyAlgoliaSettings();
+                self::$instance->helpers = new PixelkeyAlgoliaHelpers();
+                self::$instance->indexer = new AlgoliaIndexer();
+                self::$instance->html = new PixelkeyAlgoliaHtml();
 
                 //Fire the plugin logic
                 new PixelkeyAlgoliaRun();
@@ -135,6 +146,7 @@ if (!class_exists('PixelkeyAlgolia')) :
          */
         private function includes()
         {
+            require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaSettings.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/AlgoliaIndexer.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaRun.php';
             require_once PIXELKEY_ALGOLIA_PLUGIN_DIR . 'core/includes/classes/PixelkeyAlgoliaHelpers.php';

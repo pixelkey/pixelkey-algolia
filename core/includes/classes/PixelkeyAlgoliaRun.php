@@ -1,7 +1,8 @@
 <?php
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH'))
+    exit;
 
 
 /**
@@ -17,9 +18,6 @@ if (!defined('ABSPATH')) exit;
 
 class PixelkeyAlgoliaRun
 {
-    // Define the event name for the cron job
-    private static $eventName = 'pixelkey_algolia/run_indexers';
-    private static $daisyChainEvent = 'pixelkey_algolia_run_daisychain_indexers';
     /**
      * Our PixelkeyAlgoliaRun constructor 
      * to run the plugin logic.
@@ -46,8 +44,8 @@ class PixelkeyAlgoliaRun
 
         add_action('save_post', array(PixelkeyAlgolia()->helpers, 'onPostSaveAndUpdate'), 10, 3);
 
-        add_action(self::$eventName, array(PixelkeyAlgolia()->helpers, 'runAsCron'));
-        add_action(self::$daisyChainEvent, array(PixelkeyAlgolia()->helpers, 'runAsCron'));
+        add_action(PixelkeyAlgolia()->settings->get_event_name(), array(PixelkeyAlgolia()->helpers, 'runAsCron'));
+        add_action(PixelkeyAlgolia()->settings->get_daisyChainEvent(), array(PixelkeyAlgolia()->helpers, 'runAsCron'));
         add_filter('cron_schedules', array(PixelkeyAlgolia()->helpers, 'add_pixelkey_algolia_cron_interval'));
         register_activation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'activation_hook_callback'));
         register_deactivation_hook(PIXELKEY_ALGOLIA_PLUGIN_FILE, array($this, 'deactivate_hook_callback'));
@@ -97,9 +95,11 @@ class PixelkeyAlgoliaRun
      */
     public function activation_hook_callback()
     {
-        if (!wp_next_scheduled(self::$eventName)) {
-            wp_schedule_event(time(), 'twicedaily', self::$eventName);
+        $cron_event = PixelkeyAlgolia()->settings->get_event_name();
+        if (!wp_next_scheduled($cron_event)) {
+            wp_schedule_event(time(), 'twicedaily', $cron_event);
         }
+        PixelkeyAlgolia()->settings->set_default_options();
     }
 
     /*
@@ -112,8 +112,10 @@ class PixelkeyAlgoliaRun
      */
     public function deactivate_hook_callback()
     {
-        if (wp_next_scheduled(self::$eventName)) {
-            wp_clear_scheduled_hook(self::$eventName);
+        $cron_event = PixelkeyAlgolia()->settings->get_event_name();
+        if (wp_next_scheduled($cron_event)) {
+            wp_clear_scheduled_hook($cron_event);
         }
+        PixelkeyAlgolia()->settings->delete_all_options();
     }
 }
