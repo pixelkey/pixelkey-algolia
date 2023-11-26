@@ -6,14 +6,11 @@ use WP_Post as WP_Post;
 
 class AlgoliaIndexer
 {
-    // Add a batch size property
-    private $batch_size = 200; // Number of posts to process per batch
-    private $daishChainCronEvent = 'pixelkey_algolia_run_daisychain_indexers';
-    private $pageIndex = 'last_processed_page_number';
     /**
      * Creates an Algolia search client using the provided credentials.
      *
-     * @return \Algolia\AlgoliaSearch\SearchClient|false The Algolia search client instance if successful, false otherwise.
+     * @return \Algolia\AlgoliaSearch\SearchClient|false The Algolia search client instance if successful, 
+     * false otherwise.
      */
     public function createAlgoliaSearchClient()
     {
@@ -43,15 +40,17 @@ class AlgoliaIndexer
 
         $type = isset($assoc_args['type']) ? $assoc_args['type'] : 'post';
 
-        $last_processed_page_number = get_option($this->pageIndex, 1);
+        $page_number = PixelkeyAlgolia()->settings->get_last_processed_page_number();
+        $daishChainCronEvent = PixelkeyAlgolia()->settings->get_daisyChainEvent();
+        $batch_size = PixelkeyAlgolia()->settings->get_batch_size();
 
         $queryArgs = [
             'post_type' => $type,
-            'posts_per_page' => $this->batch_size,
+            'posts_per_page' => $batch_size,
             'post_status' => 'publish',
             'orderby' => 'ID',
             'order' => 'ASC',
-            'paged' => $last_processed_page_number,
+            'paged' => $page_number,
         ];
 
         if (has_filter('post_query_args')) {
@@ -63,26 +62,27 @@ class AlgoliaIndexer
 
         if (empty($posts)) {
             // No more posts to process, reset the option
-            delete_option($this->pageIndex);
+            PixelkeyAlgolia()->settings->update_last_processed_page_number(1, 'delete');
             // also delete the cron job
-            if (wp_next_scheduled($this->daishChainCronEvent)) {
-                wp_clear_scheduled_hook($this->daishChainCronEvent);
+            if (wp_next_scheduled($daishChainCronEvent)) {
+                wp_clear_scheduled_hook($daishChainCronEvent);
             }
             return;
         }
 
         $iterator = new Algolia_Post_Iterator($type, $posts);
-        
+
         $index = $algolia->initIndex(
             apply_filters('algolia_index_name', $type)
         );
         $index->saveObjects($iterator);
 
         // Update the last processed page number
-        update_option($this->pageIndex, $last_processed_page_number + 1);
+        PixelkeyAlgolia()->settings->update_last_processed_page_number($page_number + 1, 'update');
         // Schedule the next batch
-        if (!wp_next_scheduled($this->daishChainCronEvent)) {
-            wp_schedule_event(time() + 1 * MINUTE_IN_SECONDS, '1min', $this->daishChainCronEvent);
+        if (!wp_next_scheduled($daishChainCronEvent)) {
+            $batch_interval = PixelkeyAlgolia()->settings->get_batch_interval();
+            wp_schedule_event(time() + 1 * MINUTE_IN_SECONDS, $batch_interval . 'min', $daishChainCronEvent);
         }
     }
 }

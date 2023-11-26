@@ -1,7 +1,8 @@
 <?php
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH'))
+    exit;
 
 /**
  * Class PixelkeyAlgoliaHelpers
@@ -35,12 +36,23 @@ class PixelkeyAlgoliaHelpers
         $log_file_path = WP_CONTENT_DIR . '/pixelkey_algolia.log';
 
         // The log entry with the current date and time
-        $log_entry = date("Y-m-d H:i:s") . " - " . $logMessage . PHP_EOL;
+        $log_entry = sprintf("%s - %s%s", date("Y-m-d H:i:s"), $logMessage, PHP_EOL);
 
         // Write to the log file (append if it already exists)
         file_put_contents($log_file_path, $log_entry, FILE_APPEND | LOCK_EX);
     }
 
+    /**
+     * Verifies the nonce for security.
+     *
+     * @param string $nonce The nonce to verify.
+     * @param string $nonce_action The action associated with the nonce.
+     * @return bool
+     */
+    private function verifyNonce($nonce, $nonce_action)
+    {
+        return !empty($nonce) && wp_verify_nonce($nonce, $nonce_action);
+    }
     /**
      * Runs the indexing process as a cron job.
      * 
@@ -100,102 +112,136 @@ class PixelkeyAlgoliaHelpers
     public function pixelkey_algolia_admin_menu_page_callback()
     {
         $indexerName = apply_filters('algolia_index_name', 'post');
-        $action = $_POST['action'] ?? '';
 
         // Check if a valid action is submitted and process it
-        $statusMessage = '';
-        if ($action) {
-            $statusMessage = $this->processIndexAction($action, $indexerName);
-        }
+        ['classes' => $classes, 'message' => $statusMessage] = $this->processIndexAction($indexerName);
+        ['classes' => $classe_s, 'message' => $s_Message] = $this->process_additional_settings();
 
-        echo "<h3>Algolia Indexing Control</h3>
-                  <div class='run-index__wrapper'>";
-
+        echo "<div class='wrap'>";
+        echo "<h1>Algolia Indexing Control</h1>";
         // Output status message if set
-        if ($statusMessage) {
-            echo $statusMessage;
-        }
+        $statusMessage ? PixelkeyAlgolia()->html->pixelkey_algolia_admin_notice($statusMessage, $classes) : '';
+        $s_Message ? PixelkeyAlgolia()->html->pixelkey_algolia_admin_notice($s_Message, $classe_s) : '';
 
         // Output forms
-        $this->outputIndexerForms($indexerName);
-
+        $nonce = wp_nonce_field('run_index_nonce', '_wpnonce', true, false);
+        PixelkeyAlgolia()->html->pixelkey_algolia_run_all_indexers($nonce);
+        PixelkeyAlgolia()->html->pixelkey_algolia_run_indexer($indexerName, $nonce);
+        PixelkeyAlgolia()->html->pixelkey_algolia_additional_settings($nonce);
         echo "</div>";
-
-        // Check if the form has been submitted
-        if (isset(
-            $_POST['batch_size'],
-        )) {
-            // Sanitize the input
-            $batch_size = wp_unslash($_POST['batch_size']);
-
-            // Update or add options as necessary
-            update_option('batch_size', $batch_size);
-        }
-        // Render the admin page HTML
-        PixelkeyAlgolia()->html->pixelkey_algolia_admin_menu_page_render();
     }
     /**
      * Process the index action and return the result.
      * - If the action is 'run_all' or 'run_index', it runs the indexing process as a cron job.
      * - Triggers on click of the 'Run All Indexers' or 'Run $indexerName Indexer' buttons. on the admin page.
      *
-     * @param string $action The action to perform.
      * @param string $indexerName The name of the indexer.
-     * @return string The result of the index action.
+     * @return array The status message and classes.
      */
-    public function processIndexAction($action, $indexerName)
-    {
+    public function processIndexAction($indexerName)
+    {   // Initialize response array
+        $response = array(
+            'classes' => '',
+            'message' => ''
+        );
+
+        $action = $_POST['action'] ?? '';
         if ($action === 'run_all' || $action === 'run_index') {
             $nonce = $_POST['_wpnonce'] ?? '';
-            if (!wp_verify_nonce($nonce, 'run_index_nonce')) {
-                return '<div class="error"><p>Security check failed.</p></div>';
+            if ($this->verifyNonce($nonce, 'run_index_nonce') === false) {
+                return [
+                    'classes' => 'notice notice-error',
+                    'message' => 'Security check failed.',
+                ];
             }
-
             try {
                 // Schedule a one-time event to run as soon as possible.
-                $isScheduled = wp_schedule_single_event(time(), 'pixelkey_algolia/run_indexers');
+                $isScheduled = wp_schedule_single_event(time(), PixelkeyAlgolia()->settings->get_event_name());
                 if (!$isScheduled || ($isScheduled instanceof WP_Error)) {
                     throw new \Exception('Unable to schedule the event.');
                 }
+
                 $message = ($action === 'run_all') ? 'Cron job is running for all indexers.' : "Cron job is running for $indexerName indexer.";
                 $message .= " It takes a few minutes to complete. You can continue working on other tasks.";
-
                 // Return a message to the user indicating that the cron job has been triggered.
-                return "<div class='notice notice-success run-index__status'>$message</div>";
+                $response["message"] = $message;
+                $response["classes"] = "notice notice-success";
+                PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($message);
             } catch (\Exception $e) {
+                $response["message"] = "There has been a problem running the indexers.";
+                $response["classes"] = "notice notice-error";
                 PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($e->getMessage());
-                return '<div class="notice notice-error run-index__status">There has been a problem running the indexers ❌</div>';
             }
         }
-        return '';
+        return $response;
     }
 
     /**
-     * Outputs the indexer forms to the admin page.
+     * Process the additional settings form.
      *
-     * @param string $indexerName The name of the indexer.
-     * @return void
+     * @return array The status message and classes.
      */
-    public function outputIndexerForms($indexerName)
+    function process_additional_settings()
     {
-        $nonceField = wp_nonce_field('run_index_nonce', '_wpnonce', true, false);
-        echo "<form action='?page=algolia-indexing' method='post'>
-            <button class='button button-primary' name='action' value='run_all'>Run All Indexers</button>
-            $nonceField
-        </form>";
+        // Initialize response array
+        $response = array(
+            'classes' => '',
+            'message' => ''
+        );
 
-        echo "<form action='?page=algolia-indexing' method='post'>
-            <button class='button button-primary' name='action' value='run_index'>Run $indexerName Indexer</button>
-            $nonceField
-        </form>";
+        // Check if the form has been submitted
+        if (
+            isset($_POST['pixelkey_algolia_batch_size'])
+            && isset($_POST['pixelkey_algolia_batch_interval'])
+            && isset($_POST['pixelkey_algolia_cron_interval'])
+        ) {
+            $nonce = $_POST['_wpnonce'] ?? '';
+            if ($this->verifyNonce($nonce, 'run_index_nonce') === false) {
+                return [
+                    'classes' => 'notice notice-error',
+                    'message' => 'Security check failed.',
+                ];
+            }
+            // Sanitize the input
+            $batch_size = min(1000, max(50, intval($_POST['pixelkey_algolia_batch_size'])));
+            $batch_interval = min(10, max(1, intval($_POST['pixelkey_algolia_batch_interval'])));
+            $cron_interval = sanitize_text_field($_POST['pixelkey_algolia_cron_interval']);
+
+            if (!in_array($cron_interval, ['twicedaily', 'daily', 'weekly'])) {
+                new \Exception('Invalid cron interval.');
+            }
+
+            try {
+                $is_updated = update_option('pixelkey_algolia_cron_interval', $cron_interval);
+                update_option('pixelkey_algolia_batch_size', $batch_size);
+                update_option('pixelkey_algolia_batch_interval', $batch_interval);
+
+                if ($is_updated) {
+                    $cron_event = PixelkeyAlgolia()->settings->get_event_name();
+                    if (wp_next_scheduled($cron_event)) {
+                        wp_clear_scheduled_hook($cron_event);
+                    }
+                    wp_schedule_event(time() + 5 * MINUTE_IN_SECONDS, $cron_interval, $cron_event);
+                }
+                $response['classes'] = 'updated';
+                $response['message'] = 'Data saved successfully.';
+            } catch (\Exception $e) {
+                PixelkeyAlgolia()->helpers->pixelkey_algolia_log_event($e->getMessage());
+                return [
+                    'classes' => 'notice notice-error',
+                    'message' => 'There has been a problem saving the settings.',
+                ];
+            }
+        }
+        return $response;
     }
-
     /**
      * Add custom cron schedule intervals
      */
     public function add_pixelkey_algolia_cron_interval($schedules)
     {
-        $intervals = [1]; // Add more intervals as needed
+        $intervals = [];
+        array_push($intervals, PixelkeyAlgolia()->settings->get_batch_interval());
 
         foreach ($intervals as $interval) {
             $schedules["{$interval}min"] = [
