@@ -1,6 +1,6 @@
-# Pixelkey-algolia v1.0.2
+# Pixelkey-algolia v1.0.4
 
-This module offers helper classes that enable the integration of custom Algolia indexing within your WordPress applications. It includes several useful hooks, scheduled indexing cron tasks, and an administrative interface to monitor and initiate your custom indexers. As this module is intended to facilitate the creation of a tailored indexing experience, it is expected that you possess a solid understanding of Algolia indexing principles. Please note that this module does not perform post indexing on your behalf, and no default indexing configurations are provided. Thus, you will need to implement the following filters in your theme:
+This wordpress plugin enables the integration of custom Algolia indexing within your applications. It includes several useful hooks, scheduled indexing cron tasks, and an administrative interface to monitor and initiate your custom indexers. As this module is intended to facilitate the creation of a tailored indexing experience, it is expected that you possess a solid understanding of Algolia indexing principles. Please note that this module does not perform post indexing on your behalf, and no default indexing configurations are provided. Thus, you will need to implement the following filters in your theme:
 
 ### Initialize Algolia ``` App_ID ``` and ``` API_Key ```
 
