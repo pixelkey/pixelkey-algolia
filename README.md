@@ -81,8 +81,8 @@ add_filter('post_to_record', 'algolia_post_to_record');
 2. Trigger Specific actions after the cron runs
 
 
-    ``` add_action('pixelkey_algolia:after_index_cron', 'you_callback_function'); ```
+    ``` add_action('pixelkey_algolia:after_index_cron', 'your_callback_function'); ```
 
 3. Trigger after post status transition or post is saved or updated
 
-    ``` add_action('pixelkey_algolia:update_success', 'you_callback_function'); ```
+    ``` add_action('pixelkey_algolia:update_success', 'your_callback_function'); ```
