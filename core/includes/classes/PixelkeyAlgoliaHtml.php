@@ -42,7 +42,7 @@ class PixelkeyAlgoliaHtml
      */
     public function pixelkey_algolia_additional_settings($nonceField)
     {
-        ?>
+?>
         <form method="post">
             <table class="form-table">
                 <thead>
@@ -62,29 +62,28 @@ class PixelkeyAlgoliaHtml
                 </tr>
                 <tr valign="top">
                     <th scope="row">Batch Size
-                        <i class="dashicons dashicons-editor-help"
-                            title="The number of posts indexed at a time should fall within the recommended batch size of 50 to 1000."></i>
+                        <i class="dashicons dashicons-editor-help" title="The number of posts indexed at a time should fall within the recommended batch size of 50 to 1000."></i>
                     </th>
                     <td>
-                        <input type="number" name="pixelkey_algolia_batch_size" value="<?php echo esc_attr(get_option('pixelkey_algolia_batch_size')); ?>"
-                            min="50" max="1000" size="50" placeholder="100" />
+                        <input type="number" id="batchSize" name="pixelkey_algolia_batch_size" value="<?php echo esc_attr(get_option('pixelkey_algolia_batch_size')); ?>" min="50" max="100000" size="50" placeholder="100" />
+                        <?php if (esc_attr(get_option('pixelkey_algolia_batch_size')) > 1000) { ?>
+                            <p id="warning" style="color: red;"> <i class="dashicons dashicons-info"></i>It is not recommended to use a batch size greater than 1000. It may cause performance issues.</p>
+                        <?php } ?>
                     </td>
                 </tr>
                 <tr valign="top">
                     <th scope="row">Batch Processing Interval (in minutes)
-                        <i class="dashicons dashicons-editor-help"
-                            title="The time interval between one batch processing and the next should not be less than 1 minute or more than 10 minutes."></i>
+                        <i class="dashicons dashicons-editor-help" title="The time interval between one batch processing and the next should not be less than 1 minute or more than 10 minutes."></i>
                     </th>
                     <td>
-                        <input type="number" name="pixelkey_algolia_batch_interval" value="<?php echo esc_attr(get_option('pixelkey_algolia_batch_interval')); ?>"
-                            min="1" max="10" size="50" placeholder="1" />
+                        <input type="number" name="pixelkey_algolia_batch_interval" value="<?php echo esc_attr(get_option('pixelkey_algolia_batch_interval')); ?>" min="1" max="10" size="50" placeholder="1" />
                     </td>
                 </tr>
             </table>
             <?php submit_button(); ?>
             <?php echo $nonceField; ?>
         </form>
-        <?php
+<?php
     }
     /** 
      * Render the admin menu page HTML for Indexing all the indexers.
