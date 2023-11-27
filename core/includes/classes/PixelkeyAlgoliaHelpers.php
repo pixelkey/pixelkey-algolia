@@ -203,7 +203,7 @@ class PixelkeyAlgoliaHelpers
                 ];
             }
             // Sanitize the input
-            $batch_size = min(1000, max(50, intval($_POST['pixelkey_algolia_batch_size'])));
+            $batch_size = min(100000, max(50, intval($_POST['pixelkey_algolia_batch_size'])));
             $batch_interval = min(10, max(1, intval($_POST['pixelkey_algolia_batch_interval'])));
             $cron_interval = sanitize_text_field($_POST['pixelkey_algolia_cron_interval']);
 
@@ -218,11 +218,11 @@ class PixelkeyAlgoliaHelpers
 
                 if ($is_updated) {
                     $cron_event = PixelkeyAlgolia()->settings->get_event_name();
-                    if (wp_next_scheduled($cron_event)) {
-                        wp_clear_scheduled_hook($cron_event);
-                    }
-                    wp_schedule_event(time() + 5 * MINUTE_IN_SECONDS, $cron_interval, $cron_event);
+                    $daisyChainCronEvent = PixelkeyAlgolia()->settings->get_daisyChainEvent();
+                    $this->manage_cron_event($cron_event, $cron_interval, true);
+                    $this->manage_cron_event($daisyChainCronEvent, $cron_interval, false);
                 }
+
                 $response['classes'] = 'updated';
                 $response['message'] = 'Data saved successfully.';
             } catch (\Exception $e) {
@@ -251,5 +251,19 @@ class PixelkeyAlgoliaHelpers
         }
 
         return $schedules;
+    }
+
+    /**
+     * Manage cron event
+     * @param string $event_name The name of the event
+     * @param string $interval The interval of the event
+     * @return void
+     */
+    public function manage_cron_event($event_name, $interval, $re_schedule = true)
+    {
+        if (wp_next_scheduled($event_name)) {
+            wp_clear_scheduled_hook($event_name);
+        }
+        $re_schedule ? wp_schedule_event(time() + 5 * MINUTE_IN_SECONDS, $interval, $event_name) : null;
     }
 }
