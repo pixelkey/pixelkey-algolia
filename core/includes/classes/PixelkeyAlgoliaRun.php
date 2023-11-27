@@ -39,7 +39,7 @@ class PixelkeyAlgoliaRun
      */
     private function add_hooks()
     {
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_backend_scripts_and_styles'), 20);
+        // add_action('admin_enqueue_scripts', array($this, 'enqueue_backend_scripts_and_styles'), 20);
         add_action('admin_menu', array($this, 'register_custom_admin_menu_pages'), 20);
 
         add_action('save_post', array(PixelkeyAlgolia()->helpers, 'onPostSaveAndUpdate'), 10, 3);
